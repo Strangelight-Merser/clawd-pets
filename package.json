@@ -1,5 +1,5 @@
 {
-  "name": "process-seeing",
+  "name": "clawd-pets",
   "version": "0.1.0",
   "description": "An always-on-top desktop pet (Clawd) that watches all your Claude tasks at a glance — live progress, status, and real-time usage across Cowork / Code / terminal. Read-only, local-first.",
   "main": "src/main.js",
@@ -7,16 +7,48 @@
     "start": "electron .",
     "test": "node --test",
     "monitor": "node phase0/monitor.js",
-    "check": "node -e \"const c=require('./src/collector');const d=c.collect({windowMin:1440});console.log('rows',d.rows.length,'mascot',d.mascot,'needs',d.needsCount,'5h',d.rl&&d.rl.status)\""
+    "check": "node -e \"const c=require('./src/collector');const d=c.collect({windowMin:1440});console.log('rows',d.rows.length,'mascot',d.mascot,'needs',d.needsCount,'5h',d.rl&&d.rl.status)\"",
+    "icons": "node scripts/gen-icons.js",
+    "pack": "electron-builder --mac --dir"
   },
-  "keywords": ["claude", "claude-code", "cowork", "desktop-pet", "electron", "macos", "menubar", "monitoring", "usage"],
+  "keywords": [
+    "claude",
+    "claude-code",
+    "cowork",
+    "desktop-pet",
+    "electron",
+    "macos",
+    "menubar",
+    "monitoring",
+    "usage"
+  ],
   "author": "Strangelight-Merser",
   "license": "MIT",
-  "homepage": "https://github.com/Strangelight-Merser/process-seeing#readme",
-  "repository": { "type": "git", "url": "https://github.com/Strangelight-Merser/process-seeing.git" },
-  "bugs": { "url": "https://github.com/Strangelight-Merser/process-seeing/issues" },
-  "engines": { "node": ">=18" },
+  "homepage": "https://github.com/Strangelight-Merser/clawd-pets#readme",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Strangelight-Merser/clawd-pets.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Strangelight-Merser/clawd-pets/issues"
+  },
+  "engines": {
+    "node": ">=18"
+  },
   "devDependencies": {
-    "electron": "^33.2.0"
+    "electron": "^33.2.0",
+    "electron-builder": "^26.15.3"
+  },
+  "build": {
+    "appId": "com.strangelight.clawdpets",
+    "productName": "Clawd Pets",
+    "directories": { "output": "dist" },
+    "files": ["src/**/*", "assets/**/*", "package.json"],
+    "mac": {
+      "category": "public.app-category.developer-tools",
+      "icon": "assets/icon.icns",
+      "identity": null,
+      "extendInfo": { "LSUIElement": 1 }
+    }
   }
 }

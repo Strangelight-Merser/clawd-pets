@@ -1,4 +1,6 @@
-# process-seeing
+# Clawd Pets
+
+<sub>仓库 / repo: `clawd-pets` · 应用名 / app: **Clawd Pets**</sub>
 
 > An always-on-top **desktop pet (Clawd) that watches all your Claude tasks at a glance** — live progress, status, and real-time usage limits across Claude Cowork / Code / terminal. Inspired by OpenAI's Codex Pets, built for the Claude ecosystem. Read-only, local-first, zero changes to your Claude config.
 
@@ -34,6 +36,18 @@ npm run check   # 打印一次 collect() 结果，快速验证数据层
 ```
 
 > 国内装 Electron 慢/失败：本项目用 `npmmirror` 镜像即可（见各仓库的 electron 镜像说明）。
+
+## 打包成 App（双击打开）
+
+不想每次开终端跑 `npm start`，可打包成可双击的 macOS `.app`：
+
+```bash
+npm run pack    # electron-builder 产出 dist/mac*/Clawd Pets.app
+```
+
+产物在 `dist/` 下（如 `dist/mac-arm64/Clawd Pets.app`）。**首次打开**：因未做代码签名，会被 Gatekeeper 拦——**右键 → 打开 → 再确认一次**即可（之后正常双击）。可拖进「应用程序」并固定到 Dock / 用 Spotlight 启动。它是**纯菜单栏 App**（不占 Dock），启动后右下角出现 Clawd、顶栏出现单色 Clawd 图标。
+
+图标由 `npm run icons` 从官方 Clawd 几何重新生成（`assets/` 下的菜单栏 template 图与 `.icns`，已随仓库提供，一般无需重跑）。
 
 ## 怎么用
 

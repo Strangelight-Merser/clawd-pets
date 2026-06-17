@@ -442,7 +442,7 @@ if (window.api && window.api.onUpdate) {
     } },
     rows: [
       { key: '1', src: 'Cowork-VM', title: 'Math modeling progress', projectShort: 'Mathmodel', project: '/x', state: { key: 'AWAITING', label: '等输入' }, tool: null, idleSec: 42, live: false, attention: true, usage: { out: 34260, cost: 0.31, costReal: true }, todos: { total: 7, done: 5, current: 'Writing the report section' }, model: 'opus-4-8' },
-      { key: '2', src: 'Code', title: 'process-seeing', projectShort: 'process-seeing', project: '/y', state: { key: 'RUNNING', label: '运行中' }, tool: 'Bash', activity: 'Restart Electron and verify clean boot', think: '现在重构 renderer：单气泡 → 实时行栈，每任务一行显示其思考与活动', idleSec: 3, live: true, attention: false, usage: { out: 6170, cost: 0.42, costReal: false }, todos: null, model: 'opus-4-8' },
+      { key: '2', src: 'Code', title: 'clawd-pets', projectShort: 'clawd-pets', project: '/y', state: { key: 'RUNNING', label: '运行中' }, tool: 'Bash', activity: 'Restart Electron and verify clean boot', think: '现在重构 renderer：单气泡 → 实时行栈，每任务一行显示其思考与活动', idleSec: 3, live: true, attention: false, usage: { out: 6170, cost: 0.42, costReal: false }, todos: null, model: 'opus-4-8' },
       { key: '3', src: 'Cowork-VM', title: 'English writing help', projectShort: 'English-learning', project: '/z', state: { key: 'ERROR', label: '出错' }, tool: null, idleSec: 300, live: false, attention: true, usage: { out: 28400, cost: 4.2, costReal: true }, todos: null, model: 'sonnet-4-6' },
       { key: '4', src: 'Cowork', title: 'Project review', projectShort: 'A new project', project: '/w', state: { key: 'IDLE', label: '空闲' }, tool: null, idleSec: 5400, live: false, attention: false, usage: { out: 90600, cost: 7.2, costReal: false }, todos: null, model: 'opus-4-8' },
     ],

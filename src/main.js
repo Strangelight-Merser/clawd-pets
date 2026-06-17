@@ -6,6 +6,10 @@ const collector = require('./collector');
 const usageApi = require('./usage-api');
 const store = require('./store');
 
+// 锁定 userData 目录名为 clawd-pets：让 `npm start`(dev, 取 package.name) 与打包版(productName "Clawd Pets") 共用同一份设置目录，
+// 不因显示名带空格而分裂出两个设置目录。必须在 app ready 前调用。
+app.setName('clawd-pets');
+
 let win, tray;
 const prevStates = new Map();
 let firstTick = true;
@@ -26,10 +30,15 @@ function SZ(mode) {          // 窗口三档尺寸随桌宠大小缩放
   return { w: petPx + 30, h: petPx + 30 };   // collapsed
 }
 
-// 1x1 透明 PNG —— 托盘用 setTitle(emoji) 表达状态，图标只需占位
-const TRAY_IMG = nativeImage.createFromDataURL(
-  'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg=='
-);
+// 菜单栏图标：单色 Clawd 剪影 template image（系统按亮/暗菜单栏自动反色）；同目录 tray@2x.png 由 nativeImage 按屏幕 DPI 自动选用。
+// 取不到资源(异常情形)时回退 1x1 透明占位，托盘仍可用。
+const TRAY_IMG = (() => {
+  try {
+    const img = nativeImage.createFromPath(path.join(__dirname, '..', 'assets', 'tray.png'));
+    if (!img.isEmpty()) { img.setTemplateImage(true); return img; }
+  } catch { /* 落到下方占位 */ }
+  return nativeImage.createFromDataURL('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==');
+})();
 
 function place(size) {
   if (!win) return;
@@ -84,7 +93,7 @@ function createWindow() {
   win.webContents.on('unresponsive', () => { try { win && !win.isDestroyed() && win.reload(); } catch {} });
 }
 
-function moodGlyph(m) { return m === 'error' ? '🔴' : m === 'needs' ? '🟡' : m === 'working' ? '🟢' : '😴'; }
+function moodText(m) { return m === 'error' ? '出错' : m === 'needs' ? '等你确认' : m === 'working' ? '运行中' : m === 'thinking' ? '思考中' : m === 'done' ? '已完成' : '空闲'; }
 function notify(title, body) { try { new Notification({ title, body, silent: false }).show(); } catch {} }
 
 function tick() {
@@ -93,8 +102,8 @@ function tick() {
   data.quota = liveUsage ? quota : null;
   if (win && !win.isDestroyed()) win.webContents.send('update', data);
   if (tray) {
-    tray.setTitle(` ${moodGlyph(data.mascot)}${data.needsCount ? data.needsCount : ''}`);
-    tray.setToolTip(`process-seeing · ${data.rows.length} 个会话 · ${data.needsCount} 需要你`);
+    tray.setTitle(data.needsCount ? ` ${data.needsCount}` : '');   // 干净数字角标，仅当有任务需要你；常态只剩单色 Clawd 图标
+    tray.setToolTip(`Clawd Pets · ${moodText(data.mascot)} · ${data.rows.length} 个会话 · ${data.needsCount} 需要你`);
   }
   // 状态跃迁 → 通知（首轮只建立基线，不打扰）
   const seen = new Set();
@@ -158,8 +167,7 @@ function stopUsage() { ++usageGen; if (usageTimer) clearTimeout(usageTimer); usa
 function setPet(px) { petPx = Math.max(80, Math.min(220, Math.round(px))); store.set('petPx', petPx); if (win) win.webContents.send('set-pet', petPx); }  // 渲染端收到后改 --pet 并请求重排；夹在 80–220
 
 function buildTray() {
-  tray = new Tray(TRAY_IMG);
-  tray.setTitle(' 😴');
+  tray = new Tray(TRAY_IMG);   // 单色 Clawd template 图标；状态用 setTitle 数字角标(tick 里)，常态无文字
   tray.on('click', () => { if (!win) return; win.isVisible() ? win.hide() : win.show(); });
   tray.setContextMenu(Menu.buildFromTemplate([
     { label: '显示 / 隐藏', click: () => win && (win.isVisible() ? win.hide() : win.show()) },
