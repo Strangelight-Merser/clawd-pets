@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="utf-8" />
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'self' 'unsafe-inline'; script-src 'self'; img-src 'self' data:;" />
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+<div id="app" data-mood="idle">
+
+  <!-- 任务面板（展开时显示，浮在桌宠上方） -->
+  <section id="panel">
+    <header id="panel-head">
+      <span class="title"><span class="title-dot"></span>process-seeing</span>
+      <span class="spacer"></span>
+      <button class="chip" data-win="30">30m</button>
+      <button class="chip" data-win="120">2h</button>
+      <button class="chip" data-win="1440">24h</button>
+      <button id="collapse" title="收起">✕</button>
+    </header>
+
+    <div id="summary">
+      <div class="usage-line">
+        <span class="lbl">用量</span>
+        <span id="u-out">—</span><span class="dim"> 输出</span>
+        <span id="u-cache" class="dim"></span>
+        <span id="u-cost" class="cost"></span>
+      </div>
+      <div class="usage-line" id="rl-line">
+        <span class="lbl">5h 限额</span>
+        <span id="rl-dot" class="dot"></span>
+        <span id="rl-text" class="dim">—</span>
+      </div>
+      <div id="quota"></div>
+      <div id="u-models" class="dim models"></div>
+    </div>
+
+    <ul id="tasks"></ul>
+    <footer id="panel-foot" class="dim"></footer>
+  </section>
+
+  <!-- 状态行栈（对标 Codex Pets：每个进行中任务一行，实时显示"在做什么 / 需要你"） -->
+  <div id="stack">
+    <button id="stack-min" title="最小化（只看 Clawd）" aria-label="最小化">
+      <svg viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M3 6h6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+    </button>
+  </div>
+
+  <!-- 桌宠 -->
+  <div id="pet" title="">
+    <span id="badge"></span>
+    <!-- Clawd：Claude Code 官方吉祥物，几何取自开源全-rect 复刻(ayotomcs/claude-mascot)，官方橙 #d97757 -->
+    <div id="breath">
+      <svg id="mascot" width="120" height="120" viewBox="0 0 47 38" shape-rendering="crispEdges" aria-hidden="true">
+        <!-- Clawd：Claude Code 官方吉祥物，几何 1:1 取自官方 clawd.svg(anthropic.claude-code VS Code 扩展 resources)。眼在官方里是镂空，这里填深色以适配深色容器 -->
+        <g id="sprite"><path class="px" d="M5.08191 10.0769V0.938461H9.37422V10.0769H5.08191ZM9.23305 10.0769V0.938461H13.5254V10.0769H9.23305ZM13.3842 10.0769V0.938461H17.6765V10.0769H13.3842ZM17.5353 10.0769V0.938461H21.8276V10.0769H17.5353ZM21.6865 10.0769V0.938461H25.9788V10.0769H21.6865ZM25.8376 10.0769V0.938461H30.1299V10.0769H25.8376ZM29.9888 10.0769V0.938461H34.2811V10.0769H29.9888ZM34.1399 10.0769V0.938461H38.4322V10.0769H34.1399ZM38.291 10.0769V0.938461H42.5834V10.0769H38.291ZM0.930769 19.0769V9.93846H5.22308V19.0769H0.930769ZM5.08191 19.0769V9.93846H9.37422V19.0769H5.08191ZM9.23305 19.0769V14.5077H13.5254V19.0769H9.23305ZM13.3842 19.0769V9.93846H17.6765V19.0769H13.3842ZM17.5353 19.0769V9.93846H21.8276V19.0769H17.5353ZM21.6865 19.0769V9.93846H25.9788V19.0769H21.6865ZM25.8376 19.0769V9.93846H30.1299V19.0769H25.8376ZM29.9888 19.0769V9.93846H34.2811V19.0769H29.9888ZM34.1399 19.0769V14.5077H38.4322V19.0769H34.1399ZM38.291 19.0769V9.93846H42.5834V19.0769H38.291ZM42.4422 19.0769V9.93846H46.7345V19.0769H42.4422ZM5.08191 28.0769V18.9385H9.37422V28.0769H5.08191ZM9.23305 28.0769V18.9385H13.5254V28.0769H9.23305ZM13.3842 28.0769V18.9385H17.6765V28.0769H13.3842ZM17.5353 28.0769V18.9385H21.8276V28.0769H17.5353ZM21.6865 28.0769V18.9385H25.9788V28.0769H21.6865ZM25.8376 28.0769V18.9385H30.1299V28.0769H25.8376ZM29.9888 28.0769V18.9385H34.2811V28.0769H29.9888ZM34.1399 28.0769V18.9385H38.4322V28.0769H34.1399ZM38.291 28.0769V18.9385H42.5834V28.0769H38.291ZM5.08191 37.0769V27.9385H9.37422V37.0769H5.08191ZM13.3842 37.0769V27.9385H17.6765V37.0769H13.3842ZM29.9888 37.0769V27.9385H34.2811V37.0769H29.9888ZM38.291 37.0769V27.9385H42.5834V37.0769H38.291Z"/>
+          <!-- 把官方留的两个眼洞填实成橙色：眼睛移动/眨眼时后面是实心橙脸，不再露透明空底 -->
+          <rect class="px" x="9.23305" y="9.93846" width="4.29235" height="4.56924"/>
+          <rect class="px" x="34.1399" y="9.93846" width="4.29235" height="4.56924"/>
+        </g>
+        <g id="eyes">
+          <rect class="eye" x="9.23305" y="9.93846" width="4.29235" height="4.56924"/>
+          <rect class="eye" x="34.1399" y="9.93846" width="4.29235" height="4.56924"/>
+        </g>
+      </svg>
+    </div>
+    <div id="resize-grip" title="拖动调整 Clawd 大小">
+      <svg viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M10.5 4.5 4.5 10.5M10.5 8 8 10.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+    </div>
+  </div>
+
+</div>
+<script src="renderer.js?v=22"></script>
+</body>
+</html>

@@ -1,0 +1,21 @@
+# deps
+node_modules/
+
+# build output
+dist/
+out/
+build/
+*.dmg
+*.zip
+
+# 本地机器配置（含绝对路径的 hooks/权限/镜像，不应发布）
+.claude/
+.npmrc
+
+# logs / os
+*.log
+.DS_Store
+
+# editor
+.vscode/
+.idea/
