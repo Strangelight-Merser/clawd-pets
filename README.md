@@ -1,11 +1,27 @@
-# Clawd Pets
+<p align="center">
+  <img src="assets/icon.png" width="116" alt="Clawd Pets">
+</p>
 
-<sub>仓库 / repo: `clawd-pets` · 应用名 / app: **Clawd Pets**</sub>
+<h1 align="center">Clawd Pets</h1>
 
-> An always-on-top **desktop pet (Clawd) that watches all your Claude tasks at a glance** — live progress, status, and real-time usage limits across Claude Cowork / Code / terminal. Inspired by OpenAI's Codex Pets, built for the Claude ecosystem. Read-only, local-first, zero changes to your Claude config.
+<p align="center">
+  <b>常驻置顶的桌宠，把你所有 Claude 任务一眼看全</b><br>
+  An always-on-top desktop pet (Clawd) that watches all your Claude tasks at a glance
+</p>
 
-常驻置顶的桌宠 **Clawd**，把 Claude 桌面端**所有任务**（Cowork / Code / 终端）的**实时进度、状态、用量**汇到屏幕一角——多任务一眼看全，谁在跑、谁要你、谁出错、谁完成。纯读本地文件、不写、不改任何 Claude 配置。
+<p align="center">
+  <img alt="platform" src="https://img.shields.io/badge/platform-macOS-111111">
+  <img alt="electron" src="https://img.shields.io/badge/Electron-33-2b2e3a">
+  <img alt="license" src="https://img.shields.io/badge/license-MIT-3b82f6">
+  <img alt="data" src="https://img.shields.io/badge/read--only-local--first-3ddc97">
+</p>
 
+<p align="center">
+  <img src="assets/demo.png" width="560" alt="Clawd Pets — 多任务实时状态栈 + Clawd 桌宠">
+</p>
+
+> 把 Claude 桌面端**所有任务**（Cowork / Code / 终端）的**实时进度、状态、用量**汇到屏幕一角——多任务一眼看全，谁在跑、谁要你、谁出错、谁完成。灵感来自 OpenAI 的 Codex Pets，为 Claude 生态打造。**纯读本地文件、不写、不改任何 Claude 配置。**
+>
 > 设计与可行性：[PLAN.md](PLAN.md) · 路线图：[ROADMAP.md](ROADMAP.md) · 对标 Codex Pets 的功能清单：[CODEX_PARITY.md](CODEX_PARITY.md)
 
 ---
