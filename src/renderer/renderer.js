@@ -342,24 +342,7 @@ function renderPanel(d) {
   // 窗口范围高亮
   document.querySelectorAll('.chip').forEach((c) => c.classList.toggle('active', Number(c.dataset.win) === d.windowMin));
 
-  // 用量
-  $('#u-out').textContent = fmtN(d.agg.out);
-  $('#u-cache').textContent = `· 缓存读 ${fmtN(d.agg.cr)}`;
-  $('#u-cost').textContent = '≈' + fmtCost(d.agg.cost, true); // 聚合用 ≈ 表示估算，不叠加 ~
-  const models = Object.entries(d.agg.byModel).sort((a, b) => b[1] - a[1]).map(([k, v]) => `${k}×${v}`).join('  ');
-  $('#u-models').textContent = models;
-
-  // 5h 限额
-  const dot = $('#rl-dot'), txt = $('#rl-text');
-  if (d.rl) {
-    const ok = d.rl.status === 'allowed' && !d.rl.isUsingOverage;
-    dot.className = 'dot ' + (ok ? 'ok' : 'warn');
-    const remain = d.rl.resetsAt * 1000 - Date.now();
-    const age = Math.floor((Date.now() - d.rl.ts) / 1000);
-    txt.textContent = `${d.rl.status}${d.rl.isUsingOverage ? ' [超额]' : ''} · 重置 ${clock(d.rl.resetsAt)} `
-      + (remain > 0 ? `(${fmtIdle(remain / 1000)})` : '(已重置)') + ` · 读数 ${fmtIdle(age)}前`;
-  } else { dot.className = 'dot'; txt.textContent = '无近期沙箱活动，暂无读数'; }
-  renderQuota(d);
+  renderQuota(d);   // 顶部只保留"有意义时"的内容：实时配额条 / 本地 5h 读数；都没有则塌缩，不留空行/说明
 
   // 任务列表
   const ul = $('#tasks'); ul.innerHTML = '';
@@ -382,7 +365,10 @@ function renderPanel(d) {
     if (r.project) li.querySelector('.openbtn').addEventListener('click', () => window.api.openPath(r.project));
     ul.appendChild(li);
   }
-  $('#panel-foot').textContent = `${new Date(d.generatedAt).toLocaleTimeString()} 刷新 · 估算成本(~)按单价，订阅不计费`;
+  // 聚合用量挪到底部、次要呈现（成本仅按单价估算，订阅不计费）；实时用量失败也只在此低调提示
+  const liveFail = d.quota && !d.quota.ok;
+  $('#panel-foot').textContent = `${fmtN(d.agg.out)} 输出 · ≈${fmtCost(d.agg.cost, true)}（订阅不计费）`
+    + (liveFail ? ' · 实时用量未取到' : '') + ` · ${new Date(d.generatedAt).toLocaleTimeString()}`;
 }
 
 const Q_BUCKETS = [['five_hour', '5 小时'], ['seven_day', '每周·所有模型'], ['seven_day_sonnet', '每周·Sonnet'], ['seven_day_opus', '每周·Opus'], ['seven_day_cowork', '每周·Cowork']];
@@ -399,27 +385,34 @@ function quotaText(a) {
 }
 function applyQuota(d) { app.dataset.quota = quotaAlert(d) ? 'critical' : ''; }   // 任一 bucket≥90% → 桌宠光晕转红
 function renderQuota(d) {
-  const box = $('#quota'); const rl = $('#rl-line'); box.innerHTML = '';
+  const box = $('#quota'), rl = $('#rl-line'), summary = $('#summary'); box.innerHTML = '';
   const q = d.quota;
-  if (!q) { rl.style.display = ''; return; }                                  // 未开启实时用量 → 用本地读数
-  if (!q.ok) {
-    const REASON = { 'no-token': '未找到登录凭据', 'unauthorized': '凭据已过期/无权限(需登录 Claude Code)', 'rate-limited': '被限流，稍后自动重试', 'timeout': '请求超时', 'network': '网络不可达' };
-    rl.style.display = ''; box.innerHTML = `<div class="q-note">实时用量未取到（${REASON[q.reason] || esc(q.reason)}）——回退本地读数</div>`; return;
+  if (q && q.ok && q.quota) {                          // 实时配额条（最有用的视图）
+    rl.style.display = 'none';
+    for (const [k, label] of Q_BUCKETS) {
+      const b = q.quota[k]; if (!b) continue;
+      const u = Math.round(b.util);
+      const remain = b.resetsAt ? Date.parse(b.resetsAt) - Date.now() : 0;
+      box.insertAdjacentHTML('beforeend',
+        `<div class="q-row"><span class="qlbl">${label}</span>`
+        + `<div class="q-bar"><i style="width:${Math.min(100, u)}%;background:${qColor(u)}"></i></div>`
+        + `<span class="q-val">${u}%<span class="q-reset"> · ${remain > 0 ? fmtIdle(remain / 1000) : '重置'}</span></span></div>`);
+    }
+    const ex = q.quota.extra_usage;
+    if (ex && ex.is_enabled) box.insertAdjacentHTML('beforeend',
+      `<div class="q-row"><span class="qlbl">额外用量</span><span class="dim" style="grid-column:2/4">已用 $${(ex.used_credits || 0).toFixed(2)} / 上限 $${ex.monthly_limit}</span></div>`);
+    box.insertAdjacentHTML('beforeend', `<div class="q-reset" style="margin-top:3px">实时用量 · ${fmtIdle((Date.now() - q.fetchedAt) / 1000)}前</div>`);
+  } else if (d.rl) {                                   // 无实时配额条但有本地 5h 读数 → 只显这一行；不再有"未取到"长说明/"暂无读数"空行
+    rl.style.display = '';
+    const ok = d.rl.status === 'allowed' && !d.rl.isUsingOverage;
+    $('#rl-dot').className = 'dot ' + (ok ? 'ok' : 'warn');
+    const remain = d.rl.resetsAt * 1000 - Date.now();
+    $('#rl-text').textContent = `${d.rl.status}${d.rl.isUsingOverage ? ' [超额]' : ''} · 重置 ${clock(d.rl.resetsAt)}`
+      + (remain > 0 ? ` (${fmtIdle(remain / 1000)})` : ' (已重置)');
+  } else {
+    rl.style.display = 'none';
   }
-  rl.style.display = 'none';
-  for (const [k, label] of Q_BUCKETS) {
-    const b = q.quota[k]; if (!b) continue;
-    const u = Math.round(b.util);
-    const remain = b.resetsAt ? Date.parse(b.resetsAt) - Date.now() : 0;
-    box.insertAdjacentHTML('beforeend',
-      `<div class="q-row"><span class="qlbl">${label}</span>`
-      + `<div class="q-bar"><i style="width:${Math.min(100, u)}%;background:${qColor(u)}"></i></div>`
-      + `<span class="q-val">${u}%<span class="q-reset"> · ${remain > 0 ? fmtIdle(remain / 1000) : '重置'}</span></span></div>`);
-  }
-  const ex = q.quota.extra_usage;
-  if (ex && ex.is_enabled) box.insertAdjacentHTML('beforeend',
-    `<div class="q-row"><span class="qlbl">额外用量</span><span class="dim" style="grid-column:2/4">已用 $${(ex.used_credits || 0).toFixed(2)} / 上限 $${ex.monthly_limit}</span></div>`);
-  box.insertAdjacentHTML('beforeend', `<div class="q-reset" style="margin-top:3px">实时用量 · ${fmtIdle((Date.now() - q.fetchedAt) / 1000)}前</div>`);
+  summary.style.display = (rl.style.display === 'none' && !box.children.length) ? 'none' : '';   // 顶部无内容则整块塌缩
 }
 
 function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }

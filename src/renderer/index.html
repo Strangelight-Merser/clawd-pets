@@ -20,19 +20,12 @@
     </header>
 
     <div id="summary">
-      <div class="usage-line">
-        <span class="lbl">用量</span>
-        <span id="u-out">—</span><span class="dim"> 输出</span>
-        <span id="u-cache" class="dim"></span>
-        <span id="u-cost" class="cost"></span>
-      </div>
-      <div class="usage-line" id="rl-line">
+      <div class="usage-line" id="rl-line" style="display:none">
         <span class="lbl">5h 限额</span>
         <span id="rl-dot" class="dot"></span>
         <span id="rl-text" class="dim">—</span>
       </div>
       <div id="quota"></div>
-      <div id="u-models" class="dim models"></div>
     </div>
 
     <ul id="tasks"></ul>
@@ -70,6 +63,6 @@
   </div>
 
 </div>
-<script src="renderer.js?v=23"></script>
+<script src="renderer.js?v=24"></script>
 </body>
 </html>

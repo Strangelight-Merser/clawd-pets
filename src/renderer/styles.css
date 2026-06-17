@@ -211,8 +211,6 @@ html, body { margin: 0; height: 100%; background: transparent; overflow: hidden;
 .usage-line { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
 .usage-line .lbl { color: var(--dim); width: 52px; flex: 0 0 52px; }
 .dim { color: var(--dim); }
-.cost { margin-left: auto; font-variant-numeric: var(--num); }
-.models { font-size: var(--fs-meta); }
 .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--dim); display: inline-block; }
 .dot.ok { background: var(--ok); } .dot.warn { background: var(--err); }
 
@@ -226,7 +224,6 @@ html, body { margin: 0; height: 100%; background: transparent; overflow: hidden;
   transition: width 600ms var(--ease-enter), background var(--dur-soft) var(--ease-soft); }
 .q-val { font-variant-numeric: var(--num); }
 .q-reset { color: var(--text-3); font-size: var(--fs-micro); }
-.q-note { color: var(--text-3); font-size: var(--fs-micro); }
 
 #tasks { list-style: none; margin: 0; padding: 4px; overflow: auto; flex: 1 1 auto; min-height: 0; }
 .task { display: grid; grid-template-columns: 10px 1fr auto; gap: 8px; align-items: start;
