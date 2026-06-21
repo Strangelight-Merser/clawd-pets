@@ -9,7 +9,8 @@
     "monitor": "node phase0/monitor.js",
     "check": "node -e \"const c=require('./src/collector');const d=c.collect({windowMin:1440});console.log('rows',d.rows.length,'mascot',d.mascot,'needs',d.needsCount,'5h',d.rl&&d.rl.status)\"",
     "icons": "node scripts/gen-icons.js",
-    "pack": "electron-builder --mac --dir"
+    "pack": "electron-builder --mac --dir",
+    "app": "bash scripts/install-app.sh"
   },
   "keywords": [
     "claude",

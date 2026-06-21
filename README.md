@@ -53,15 +53,18 @@ npm run check   # 打印一次 collect() 结果，快速验证数据层
 
 > 国内装 Electron 慢/失败：本项目用 `npmmirror` 镜像即可（见各仓库的 electron 镜像说明）。
 
-## 打包成 App（双击打开）
+## 装成 App，像普通应用一样打开
 
-不想每次开终端跑 `npm start`，可打包成可双击的 macOS `.app`：
+不想每次开终端，**一条命令装进「应用程序」**：
 
 ```bash
-npm run pack    # electron-builder 产出 dist/mac*/Clawd Pets.app
+npm run app     # 打包 + 安装到「应用程序」+ 打开
 ```
 
-产物在 `dist/` 下（如 `dist/mac-arm64/Clawd Pets.app`）。**首次打开**：因未做代码签名，会被 Gatekeeper 拦——**右键 → 打开 → 再确认一次**即可（之后正常双击）。可拖进「应用程序」并固定到 Dock / 用 Spotlight 启动。它是**纯菜单栏 App**（不占 Dock），启动后右下角出现 Clawd、顶栏出现单色 Clawd 图标。
+之后就能从 **Launchpad / 聚焦搜索（⌘Space 搜 “Clawd”）/ 访达「应用程序」** 直接打开，和任何 Mac 应用一样；可固定到 Dock。它是**纯菜单栏 App**（不占 Dock 常驻），启动后右下角出现 Clawd、顶栏出现单色 Clawd 图标。
+
+> 只想打包不安装：`npm run pack` → 产物在 `dist/mac*/Clawd Pets.app`。
+> 因未做代码签名：用 `npm run app` 安装已自动清除隔离属性可直接开；若手动从 `dist/` 双击被 Gatekeeper 拦，**右键 → 打开 → 再确认一次**即可。
 
 图标由 `npm run icons` 从官方 Clawd 几何重新生成（`assets/` 下的菜单栏 template 图与 `.icns`，已随仓库提供，一般无需重跑）。
 
