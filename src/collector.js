@@ -70,6 +70,17 @@ function readFile(file) {
   } finally { fs.closeSync(fd); }
 }
 function parse(lines) { const o = []; for (const l of lines) { try { o.push(JSON.parse(l)); } catch {} } return o; }
+// 增量解析缓存：按 (mtimeMs,size) 命中则跳过重读+重解析（每次心跳/文件事件大多数文件没变）→ 把同步 IO 从主进程热路径上拿掉。
+// 写入必然更新 mtime，故 (mtime,size) 不变 ⇒ 内容不变，复用安全。collect() 末尾按本轮所见集合剪枝，防缓存无限增长。
+const _parseCache = new Map();
+function readParseCached(file, st, seen) {
+  if (seen) seen.add(file);
+  const c = _parseCache.get(file);
+  if (c && c.mtimeMs === st.mtimeMs && c.size === st.size) return c.parsed;
+  const parsed = parse(readFile(file).lines);
+  _parseCache.set(file, { mtimeMs: st.mtimeMs, size: st.size, parsed });
+  return parsed;
+}
 function alive(pid) { try { process.kill(pid, 0); return true; } catch { return false; } }   // ESRCH=已退/EPERM=他人进程(非我方 claude 会话)→均视为不活
 
 // ---------- 索引 / 旁路数据 ----------
@@ -292,13 +303,14 @@ function collect(opts = {}) {
   const rows = [];
   const agg = { in: 0, out: 0, cr: 0, cw: 0, cost: 0, byModel: {}, count: 0 };
   let rl = null;
+  const seen = new Set();   // 本轮访问过的文件，末尾用于剪枝解析缓存
 
   // ① 终端/Code  +  ② 旧版 Cowork
   for (const file of walk(PROJECTS_DIR, n => n.endsWith('.jsonl'))) try {
     let st; try { st = fs.statSync(file); } catch { continue; }
     const idleSec = Math.floor((now - st.mtimeMs) / 1000);
     if (idleSec > hardCull) continue;                                          // 真·古老：超兜底上限不解析
-    let parsed; try { parsed = parse(readFile(file).lines); } catch { continue; }
+    let parsed; try { parsed = readParseCached(file, st, seen); } catch { continue; }   // (mtime,size) 未变则复用，跳过重读重解析
     const id = path.basename(file, '.jsonl');
     const s = jsonlState(parsed, idleSec, live.has(id)); if (!s) continue;
     if (idleSec > windowMin * 60 && !isAttnClass(s.state.key)) continue;        // 超窗且非"需要你"族 → 丢；出错/限流/等你确认 即使超窗也保留(标 stale)
@@ -315,10 +327,10 @@ function collect(opts = {}) {
     let d; try { d = JSON.parse(fs.readFileSync(meta, 'utf8')); } catch { continue; }
     if (!d.sessionId) continue;
     const audit = path.join(path.dirname(meta), d.sessionId, 'audit.jsonl');
-    let f; try { f = readFile(audit); } catch { continue; }
-    const parsed = parse(f.lines);
-    const idleSec = Math.floor((now - f.mtimeMs) / 1000);
-    if (idleSec > hardCull) continue;   // 古老会话整体跳过——也不让其陈旧 rate_limit_event 污染面板"5h 限额"
+    let ast; try { ast = fs.statSync(audit); } catch { continue; }
+    const idleSec = Math.floor((now - ast.mtimeMs) / 1000);
+    if (idleSec > hardCull) continue;   // 古老会话整体跳过——也不让其陈旧 rate_limit_event 污染面板"5h 限额"（先 stat 再决定，省去读旧文件）
+    const parsed = readParseCached(audit, ast, seen);   // (mtime,size) 未变则复用
     for (const e of parsed) if (e.type === 'rate_limit_event' && e.rate_limit_info) {
       const t = e._audit_timestamp ? Date.parse(e._audit_timestamp) : NaN;   // Date.parse(0)===2000年(非0)，须显式校验
       const ts = Number.isFinite(t) ? t : 0;
@@ -332,6 +344,7 @@ function collect(opts = {}) {
     mergeAgg(agg, u, d.model);
   } catch { /* 单沙箱会话异常隔离 */ }
   agg.count = rows.length;
+  for (const k of _parseCache.keys()) if (!seen.has(k)) _parseCache.delete(k);   // 剪枝：本轮没见到的(已删/超窗老化)文件移出缓存，防无限增长
 
   // 注意力 + 桌宠情绪（多会话取最高优先级，富状态）
   let needs = 0, anyErr = false, anyWait = false, anyRunTool = false, anyThinking = false, anyDone = false;

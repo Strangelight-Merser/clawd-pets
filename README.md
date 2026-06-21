@@ -46,7 +46,7 @@ Inspired by OpenAI's [Codex Pets](#-credits), built for the Claude ecosystem: it
 ## ✨ Features
 
 ### 🐾 The official Clawd mascot, alive
-This is **Clawd** — Claude Code's official orange pixel mascot — with its pixel geometry reproduced **1:1** from the official asset. It's alive, not a static sprite:
+This is **Clawd**, Claude Code's orange pixel mascot — lovingly rendered in pixel art as an unofficial tribute (see [Credits](#-credits)). It's alive, not a static sprite:
 
 - **Mood glow** that reflects what's happening: `idle · thinking · working · done · needs-you · error`.
 - **Continuous breathing**, **random blinking**, and **eyes that track your cursor**.
@@ -62,7 +62,7 @@ Every in-progress or attention-needing session shows up as **one row, stacked ri
 - **Minimizable** — collapse it down to just the pet when you want quiet.
 
 ### 📊 Real-time usage limits *(optional, off by default)*
-Opt in from the tray to see your **real** quota utilization — `5h` · `weekly` · `Sonnet` · `Opus` — each with a live reset countdown, straight from Anthropic's official OAuth usage endpoint. When any quota hits **≥ 90%**, the pet **turns red** as an early warning, so you can wrap up a run *before* it gets cut off mid-thought. (See [Real-time usage](#-real-time-usage-optional) for exactly how the token is handled.)
+Opt in from the tray to see your **real** quota utilization — `5h` · `weekly` · `Sonnet` · `Opus` — each with a live reset countdown, via the same OAuth usage endpoint Claude's own clients use (an **undocumented, unofficial** API that may change or break). When any quota hits **≥ 90%**, the pet **turns red** as an early warning, so you can wrap up a run *before* it gets cut off mid-thought. (See [Real-time usage](#-real-time-usage-optional) for exactly how the token is handled.)
 
 ### 🖱️ Stays out of your way
 - **Transparent window with mouse click-through** — it never blocks the apps underneath. Clicks only land when your pointer is actually on the pet, a row, or a panel.
@@ -141,7 +141,7 @@ Trust is the whole point, so here's the short, honest version:
 
 This feature is **opt-in** and **off by default**.
 
-When you enable **Live usage** from the tray menu, Clawd Pets calls Anthropic's official OAuth usage endpoint and shows your real **5h / weekly / Sonnet / Opus** utilization, each with a reset countdown. If any quota reaches **≥ 90%**, the pet turns **red** as an early warning.
+When you enable **Live usage** from the tray menu, Clawd Pets calls the same OAuth usage endpoint Claude's official clients use — an **undocumented, unofficial** endpoint, so treat it as best-effort: it may change or break at any time. It then shows your real **5h / weekly / Sonnet / Opus** utilization, each with a reset countdown. If any quota reaches **≥ 90%**, the pet turns **red** as an early warning.
 
 How the token is handled, precisely:
 

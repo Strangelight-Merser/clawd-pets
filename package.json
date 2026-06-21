@@ -6,7 +6,6 @@
   "scripts": {
     "start": "electron .",
     "test": "node --test",
-    "monitor": "node phase0/monitor.js",
     "check": "node -e \"const c=require('./src/collector');const d=c.collect({windowMin:1440});console.log('rows',d.rows.length,'mascot',d.mascot,'needs',d.needsCount,'5h',d.rl&&d.rl.status)\"",
     "icons": "node scripts/gen-icons.js",
     "pack": "electron-builder --mac --dir",
@@ -37,19 +36,27 @@
     "node": ">=18"
   },
   "devDependencies": {
-    "electron": "^33.2.0",
+    "electron": "^42.4.1",
     "electron-builder": "^26.15.3"
   },
   "build": {
     "appId": "com.strangelight.clawdpets",
     "productName": "Clawd Pets",
-    "directories": { "output": "dist" },
-    "files": ["src/**/*", "assets/**/*", "package.json"],
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "src/**/*",
+      "assets/**/*",
+      "package.json"
+    ],
     "mac": {
       "category": "public.app-category.developer-tools",
       "icon": "assets/icon.icns",
       "identity": null,
-      "extendInfo": { "LSUIElement": 1 }
+      "extendInfo": {
+        "LSUIElement": 1
+      }
     }
   }
 }
