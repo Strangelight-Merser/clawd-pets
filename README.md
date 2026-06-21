@@ -71,6 +71,12 @@ Opt in from the tray to see your **real** quota utilization — `5h` · `weekly`
 - **Settings persist** across restarts.
 - **Pure menu-bar app** — no Dock icon cluttering things up.
 
+<p align="center">
+  <img src="assets/panel.png" width="340" alt="Clawd Pets expanded panel — per-task status, progress, and cost, plus live usage bars">
+  <br>
+  <sub>Click the pet to expand: every session's status · progress · cost, plus live usage bars when enabled.</sub>
+</p>
+
 ## 🚀 Quick start
 
 Requires **macOS** and **Node.js ≥ 18**.
