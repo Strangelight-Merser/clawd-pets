@@ -113,3 +113,20 @@
 - fs.watch(T2.1) → 先于 hook(T4.6)
 - renderer 拆分(T4.11) → 先于 T4.1–T4.3 等气泡/动画类
 - "收起态视觉优先级"统一规则 → T1.4 + T4.7 一起定
+
+---
+
+## ⭐ Stars / 公开运营（2026-06-17 起，/goal「以高 stars 为目标」）
+经多智能体「README judge-panel + 增星策略」工作流（wfkcj13zi）综合，已落地高/中影响项：
+- ✅ **英文优先 README**（landing page 是第一增星杠杆）：动图 hero + 徽章 + 痛点开场 + How-it-works(状态推导=可信度钩子)；中文挪 `README.zh-CN.md`，双向链接。
+- ✅ **动图演示** `assets/demo.gif`（Electron 截帧→ffmpeg，248KB，呼吸/转圈/思考链实时更新/任务完成）；`scripts/gen-demo-gif.js` 可复现。
+- ✅ **可下载发布** [Release v0.1.0](https://github.com/Strangelight-Merser/clawd-pets/releases/tag/v0.1.0)：ad-hoc 签名 .app zip（94MB）+ Gatekeeper 解锁说明（降低非开发者试用门槛）。
+- ✅ **修 MIT 检测**：LICENSE 还原纯 MIT（GitHub 侧栏由 "Other"→"MIT"），吉祥物声明挪 `NOTICE`。
+- ✅ **CI 绿标**：`.github/workflows/ci.yml`(node --test) push/PR 跑、已两次 success；README 接真实 badge。
+- ✅ **CONTRIBUTING.md** + 仓库 12 topics + homepage 指向 Releases + 展开面板截图 `assets/panel.png`。
+
+**待办（增星，多为用户侧动作或较大特性）：**
+- **[最高·用户侧] 协调发布**：Show HN（"Show HN: Clawd Pets — a desktop pet that watches all your Claude Code tasks"）、r/macapps、Claude/Anthropic dev 社区；每帖以 demo.gif 开场 + "Codex Pets, for Claude" 钩子 + 直链 Release。**0 star 仓库需外部流量启动社会证明飞轮——这是单个最大杠杆，但属发布/发帖（用户的账号与声音），由你来发。** 排在 Release+英文README+GIF 齐了之后（已齐）。
+- **[中] i18n / 英文 UI**：当前 UI 字符串硬编码中文（状态标签/托盘/面板）。建议系统 locale 自动检测（zh→中文，其余→英文），既保你自己的中文体验又扩国际受众；策略 panel 未列为 top（README 已英文 + 任务名多为英文，可用性已达），但仍是国际增星的实打实改进。
+- **[低] 运营脚手架**：开 GitHub Discussions(Show-and-tell)、播 3–5 个 `good first issue`(跨平台/交互回复/沙箱 stale 判定/订阅成本估算)、加 `.github/ISSUE_TEMPLATE` + PR 模板（空 tracker 显得弃坑；这些喂 GitHub 贡献者发现面）。
+- **[低] 分发增强**：universal/Intel 构建（现仅 arm64）、dmg、Sparkle 自动更新、（远期）开发者签名+公证消除 Gatekeeper 摩擦。
