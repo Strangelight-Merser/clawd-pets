@@ -33,7 +33,7 @@ app.whenReady().then(async () => {
   // 1) 初始栈（呼吸 + 运行中转圈 + 三气泡）
   await grab(16, 70);
   // 2) 思考链实时更新（运行中任务换一句叙述 + 推进 todo）——展示"实时状态栈"
-  await inject(win, `(function(){ if(typeof last!=='undefined'&&last.rows&&last.rows[1]){ last.rows[1].think='正在验证打包产物：asar 内图标与源一致'; last.rows[1].activity='Verify packaged icon matches source'; renderPet(last); detectTransitions(last); updateMode(last);} })()`);
+  await inject(win, `(function(){ if(typeof last!=='undefined'&&last.rows&&last.rows[1]){ last.rows[1].think='Verifying packaged build: asar icon matches source'; last.rows[1].activity='Verify packaged icon matches source'; renderPet(last); detectTransitions(last); updateMode(last);} })()`);
   await grab(14, 70);
   // 3) 运行中任务完成 → 变绿"完成"进栈
   await inject(win, `(function(){ if(typeof last!=='undefined'&&last.rows&&last.rows[1]){ last.rows[1].state={key:'AWAITING',label:'等输入'}; last.rows[1].think=null; last.rows[1].attention=true; last.rows[1].live=false; renderPet(last); detectTransitions(last); updateMode(last);} })()`);

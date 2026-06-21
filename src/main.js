@@ -10,6 +10,33 @@ const store = require('./store');
 // 不因显示名带空格而分裂出两个设置目录。必须在 app ready 前调用。
 app.setName('clawd-pets');
 
+// 主进程 i18n：默认英文（面向国际），系统语言 zh-* → 中文。M 在 app ready 后按 app.getLocale() 选定。
+const TR = {
+  en: {
+    show: 'Show / Hide', range: 'Time range', last30: 'Last 30 min', last2h: 'Last 2 hours', last24h: 'Last 24 hours',
+    refresh: 'Refresh rate', fast: 'Fast (1.5s)', normal: 'Normal (3s)', power: 'Power saver (10s)',
+    size: 'Pet size', small: 'Small', medium: 'Medium', large: 'Large',
+    live: 'Live usage (network · keychain prompt on first use)',
+    notify: 'Notify on attention / error (off by default)',
+    motion: 'Motion (breathing / blink / gaze)', quit: 'Quit',
+    mood: { error: 'error', needs: 'needs you', working: 'running', thinking: 'thinking', done: 'done', idle: 'idle' },
+    tip: (mood, n, needs) => `Clawd Pets · ${mood} · ${n} sessions · ${needs} need you`,
+    nNeeds: '✋ Needs you', nErr: '🔴 Error', nRate: '⏳ Rate limited',
+  },
+  zh: {
+    show: '显示 / 隐藏', range: '窗口范围', last30: '最近 30 分钟', last2h: '最近 2 小时', last24h: '最近 24 小时',
+    refresh: '刷新频率', fast: '快 (1.5s)', normal: '正常 (3s)', power: '省电 (10s)',
+    size: '桌宠大小', small: '小', medium: '中', large: '大',
+    live: '实时用量 (联网·首次读钥匙串需授权)',
+    notify: '需要你/出错时弹系统通知 (默认关·避免与 Claude 重复)',
+    motion: '动效（呼吸/眨眼/视线/反应）', quit: '退出',
+    mood: { error: '出错', needs: '等你确认', working: '运行中', thinking: '思考中', done: '已完成', idle: '空闲' },
+    tip: (mood, n, needs) => `Clawd Pets · ${mood} · ${n} 个会话 · ${needs} 需要你`,
+    nNeeds: '✋ 需要你', nErr: '🔴 出错', nRate: '⏳ 触发限流',
+  },
+};
+let M = TR.en;
+
 let win, tray;
 const prevStates = new Map();
 let firstTick = true;
@@ -93,7 +120,7 @@ function createWindow() {
   win.webContents.on('unresponsive', () => { try { win && !win.isDestroyed() && win.reload(); } catch {} });
 }
 
-function moodText(m) { return m === 'error' ? '出错' : m === 'needs' ? '等你确认' : m === 'working' ? '运行中' : m === 'thinking' ? '思考中' : m === 'done' ? '已完成' : '空闲'; }
+function moodText(m) { return M.mood[m] || M.mood.idle; }
 function notify(title, body) { try { new Notification({ title, body, silent: false }).show(); } catch {} }
 
 function tick() {
@@ -103,7 +130,7 @@ function tick() {
   if (win && !win.isDestroyed()) win.webContents.send('update', data);
   if (tray) {
     tray.setTitle(data.needsCount ? ` ${data.needsCount}` : '');   // 干净数字角标，仅当有任务需要你；常态只剩单色 Clawd 图标
-    tray.setToolTip(`Clawd Pets · ${moodText(data.mascot)} · ${data.rows.length} 个会话 · ${data.needsCount} 需要你`);
+    tray.setToolTip(M.tip(moodText(data.mascot), data.rows.length, data.needsCount));
   }
   // 状态跃迁 → 通知（首轮只建立基线，不打扰）
   const seen = new Set();
@@ -112,9 +139,9 @@ function tick() {
     const prev = prevStates.get(r.key);
     if (notifyEnabled && !firstTick) {   // 默认关；桌宠气泡是主要提醒，通知仅作可选补充
       const where = r.projectShort && r.projectShort !== r.title ? ` · ${r.projectShort}` : '';
-      if ((prev === 'RUNNING' || prev === 'WAIT') && r.state.key === 'AWAITING') notify('✋ 需要你', r.title + where);
-      else if ((prev === 'RUNNING' || prev === 'WAIT') && r.state.key === 'ERROR') notify('🔴 出错', r.title + where);
-      else if (prev !== 'RATE' && r.state.key === 'RATE') notify('⏳ 触发限流', r.title + where);
+      if ((prev === 'RUNNING' || prev === 'WAIT') && r.state.key === 'AWAITING') notify(M.nNeeds, r.title + where);
+      else if ((prev === 'RUNNING' || prev === 'WAIT') && r.state.key === 'ERROR') notify(M.nErr, r.title + where);
+      else if (prev !== 'RATE' && r.state.key === 'RATE') notify(M.nRate, r.title + where);
     }
     prevStates.set(r.key, r.state.key);
   }
@@ -170,32 +197,32 @@ function buildTray() {
   tray = new Tray(TRAY_IMG);   // 单色 Clawd template 图标；状态用 setTitle 数字角标(tick 里)，常态无文字
   tray.on('click', () => { if (!win) return; win.isVisible() ? win.hide() : win.show(); });
   tray.setContextMenu(Menu.buildFromTemplate([
-    { label: '显示 / 隐藏', click: () => win && (win.isVisible() ? win.hide() : win.show()) },
+    { label: M.show, click: () => win && (win.isVisible() ? win.hide() : win.show()) },
     { type: 'separator' },
-    { label: '窗口范围', submenu: [
-      { label: '最近 30 分钟', type: 'radio', checked: windowMin === 30, click: () => setWindowMin(30) },
-      { label: '最近 2 小时', type: 'radio', checked: windowMin === 120, click: () => setWindowMin(120) },
-      { label: '最近 24 小时', type: 'radio', checked: windowMin === 1440, click: () => setWindowMin(1440) },
+    { label: M.range, submenu: [
+      { label: M.last30, type: 'radio', checked: windowMin === 30, click: () => setWindowMin(30) },
+      { label: M.last2h, type: 'radio', checked: windowMin === 120, click: () => setWindowMin(120) },
+      { label: M.last24h, type: 'radio', checked: windowMin === 1440, click: () => setWindowMin(1440) },
     ] },
-    { label: '刷新频率', submenu: [
-      { label: '快 (1.5s)', type: 'radio', checked: intervalMs === 1500, click: () => { intervalMs = 1500; store.set('intervalMs', 1500); restartTimer(); } },
-      { label: '正常 (3s)', type: 'radio', checked: intervalMs === 3000, click: () => { intervalMs = 3000; store.set('intervalMs', 3000); restartTimer(); } },
-      { label: '省电 (10s)', type: 'radio', checked: intervalMs === 10000, click: () => { intervalMs = 10000; store.set('intervalMs', 10000); restartTimer(); } },
+    { label: M.refresh, submenu: [
+      { label: M.fast, type: 'radio', checked: intervalMs === 1500, click: () => { intervalMs = 1500; store.set('intervalMs', 1500); restartTimer(); } },
+      { label: M.normal, type: 'radio', checked: intervalMs === 3000, click: () => { intervalMs = 3000; store.set('intervalMs', 3000); restartTimer(); } },
+      { label: M.power, type: 'radio', checked: intervalMs === 10000, click: () => { intervalMs = 10000; store.set('intervalMs', 10000); restartTimer(); } },
     ] },
-    { label: '桌宠大小', submenu: [
-      { label: '小', type: 'radio', checked: petPx === 100, click: () => setPet(100) },
-      { label: '中', type: 'radio', checked: petPx === 120, click: () => setPet(120) },
-      { label: '大', type: 'radio', checked: petPx === 156, click: () => setPet(156) },
+    { label: M.size, submenu: [
+      { label: M.small, type: 'radio', checked: petPx === 100, click: () => setPet(100) },
+      { label: M.medium, type: 'radio', checked: petPx === 120, click: () => setPet(120) },
+      { label: M.large, type: 'radio', checked: petPx === 156, click: () => setPet(156) },
     ] },
     { type: 'separator' },
-    { label: '实时用量 (联网·首次读钥匙串需授权)', type: 'checkbox', checked: liveUsage,
+    { label: M.live, type: 'checkbox', checked: liveUsage,
       click: (mi) => { liveUsage = mi.checked; store.set('liveUsage', liveUsage); liveUsage ? startUsage() : stopUsage(); tick(); } },
-    { label: '需要你/出错时弹系统通知 (默认关·避免与 Claude 重复)', type: 'checkbox', checked: notifyEnabled,
+    { label: M.notify, type: 'checkbox', checked: notifyEnabled,
       click: (mi) => { notifyEnabled = mi.checked; store.set('notifyEnabled', notifyEnabled); } },
-    { label: '动效（呼吸/眨眼/视线/反应）', type: 'checkbox', checked: motionOn,
+    { label: M.motion, type: 'checkbox', checked: motionOn,
       click: (mi) => { motionOn = mi.checked; store.set('motionOn', motionOn); if (win) win.webContents.send('set-motion', motionOn); } },
     { type: 'separator' },
-    { label: '退出', click: () => app.quit() },
+    { label: M.quit, click: () => app.quit() },
   ]));
 }
 
@@ -219,6 +246,7 @@ app.on('second-instance', () => { if (win && !win.isDestroyed()) { win.show(); w
 
 app.whenReady().then(() => {
   if (!isPrimary) return;
+  M = TR[/^zh/i.test(app.getLocale() || '') ? 'zh' : 'en'];   // 系统语言决定托盘/通知语言（默认英文，zh-* → 中文）
   store.init(app.getPath('userData'));   // 读回上次设置(窗口范围/刷新率/实时用量/通知/动效/桌宠大小/位置)
   // 读盘加白名单/范围校验，防 settings.json 被手改/损坏成 0/负值/NaN 冻死应用
   const sw = store.get('windowMin'); if ([30, 120, 1440].includes(sw)) windowMin = sw;

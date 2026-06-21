@@ -44,29 +44,29 @@ function petAnim(frames, opts) { if (motionOff) return; const m = $('#mascot'); 
 function reactCelebrate() { petAnim([{ transform: 'translateY(0)' }, { transform: 'translateY(-14px)' }, { transform: 'translateY(0)' }, { transform: 'translateY(-6px)' }, { transform: 'translateY(0)' }], { duration: 640, easing: 'cubic-bezier(.3,1.5,.5,1)' }); }
 function reactWiggle() { petAnim([{ transform: 'rotate(0)' }, { transform: 'rotate(-5deg)' }, { transform: 'rotate(4deg)' }, { transform: 'rotate(-2deg)' }, { transform: 'rotate(0)' }], { duration: 440, easing: 'ease-out' }); }
 
-function phaseVerb(tool) {   // 工具名 → 人话阶段
-  if (!tool || tool === '-') return '处理中';
+function phaseVerb(tool) {   // 工具名 → 人话阶段（i18n）
+  if (!tool || tool === '-') return T.phaseDefault;
   tool = String(tool).replace(/^mcp__[a-z0-9]+__/i, '').replace(/^mcp__/i, '');   // 去掉 mcp 前缀
   const t = tool.toLowerCase();
-  if (/bash|shell|command|exec|\brun\b/.test(t)) return '运行命令';
-  if (/edit|write|create|apply|patch|str_replace|notebook/.test(t)) return '写改动';
-  if (/read|grep|glob|^ls|cat|search/.test(t)) return '读取/检索';
-  if (/test|pytest|jest|vitest/.test(t)) return '跑测试';
-  if (/web|fetch|http|browser|preview|screenshot|snapshot|navigate|click|fill/.test(t)) return '联网/浏览';
-  if (/todo|plan/.test(t)) return '整理计划';
+  if (/bash|shell|command|exec|\brun\b/.test(t)) return T.phaseRun;
+  if (/edit|write|create|apply|patch|str_replace|notebook/.test(t)) return T.phaseEdit;
+  if (/read|grep|glob|^ls|cat|search/.test(t)) return T.phaseRead;
+  if (/test|pytest|jest|vitest/.test(t)) return T.phaseTest;
+  if (/web|fetch|http|browser|preview|screenshot|snapshot|navigate|click|fill/.test(t)) return T.phaseWeb;
+  if (/todo|plan/.test(t)) return T.phasePlan;
   return tool;
 }
 function bubbleSpec(r) {
-  const T = r.title;
+  const nm = r.title;
   switch (r.state.key) {
-    case 'ERROR': return { icon: 'error', text: `${T} 出错了`, cls: 'b-err', persistent: true };
-    case 'RATE': return { icon: 'rate', text: `${T} 触发限流，等额度恢复`, cls: 'b-err', persistent: true };
-    case 'WAIT': return { icon: 'wait', text: `${T} 在等你确认`, cls: 'b-wait', persistent: true };
-    case 'AWAITING': return { icon: 'done', text: `${T} 完成`, cls: 'b-done', persistent: false, linger: 6500 };   // 完成：短驻后离栈
+    case 'ERROR': return { icon: 'error', text: T.bErr(nm), cls: 'b-err', persistent: true };
+    case 'RATE': return { icon: 'rate', text: T.bRate(nm), cls: 'b-err', persistent: true };
+    case 'WAIT': return { icon: 'wait', text: T.bWait(nm), cls: 'b-wait', persistent: true };
+    case 'AWAITING': return { icon: 'done', text: T.bDone(nm), cls: 'b-done', persistent: false, linger: 6500 };   // 完成：短驻后离栈
     case 'RUNNING': {
       const act = r.activity || (r.tool ? phaseVerb(r.tool) : null);        // 工具动作：Bash 描述 / 读取文件名 / 检索…
-      const primary = r.think || act || '思考中…';                          // 主行=当前思考叙述(其次工具动作)
-      const sub = (act && r.think) ? `${T} · ${act}` : T;                   // 副行=任务名(· 工具动作)
+      const primary = r.think || act || T.think;                            // 主行=当前思考叙述(其次工具动作)
+      const sub = (act && r.think) ? `${nm} · ${act}` : nm;                 // 副行=任务名(· 工具动作)
       return { icon: r.tool ? 'working' : 'thinking', text: primary, sub, cls: r.tool ? 'b-run' : 'b-think', persistent: true };   // 运行：常驻 live 行，随思考/活动原地更新
     }
   }
@@ -144,7 +144,7 @@ function computeDesired(d) {   // 算出当前该显示哪些行（每个 speaka
   if (cand.length > MAX_ROWS) {
     const head = cand.slice(0, MAX_ROWS - 1), dropped = cand.slice(MAX_ROWS - 1);
     for (const x of dropped) if (isShort(x.spec)) dismissed.set(x.key, x.sig);   // 被挤进折叠的短驻行视作已播，避免腾位后重弹
-    head.push({ key: '__more__', weight: -1, spec: { icon: 'folder', text: `还有 ${dropped.length} 个进行中`, cls: 'b-more', persistent: true }, sig: '__more__:' + dropped.length });
+    head.push({ key: '__more__', weight: -1, spec: { icon: 'folder', text: T.more(dropped.length), cls: 'b-more', persistent: true }, sig: '__more__:' + dropped.length });
     return head;
   }
   return cand;
@@ -330,12 +330,19 @@ if (window.api && window.api.setIgnore) {
 document.querySelectorAll('.chip').forEach((c) =>
   c.addEventListener('click', () => window.api.setWindow(Number(c.dataset.win))));
 
+(function initI18n() {   // 用所选语言覆盖 index.html 里的静态英文默认（zh 系统→中文）
+  const rl = document.querySelector('#rl-line .lbl'); if (rl) rl.textContent = T.rlLabel;
+  const c = $('#collapse'); if (c) c.title = T.tCollapse;
+  const m = $('#stack-min'); if (m) { m.title = T.tMinimize; m.setAttribute('aria-label', T.tMinimize); }
+  const g = $('#resize-grip'); if (g) g.title = T.tResize;
+})();
+
 function renderPet(d) {
   taskMood = d.mascot; applyMood();
   const b = $('#badge');
   if (d.needsCount > 0) { b.textContent = d.needsCount; b.classList.add('show'); }
   else b.classList.remove('show');
-  $('#pet').title = `${d.rows.length} 个会话 · ${d.needsCount} 需要你 · 出 ${fmtN(d.agg.out)} tok`;
+  $('#pet').title = T.petTitle(d.rows.length, d.needsCount, fmtN(d.agg.out));
 }
 
 function renderPanel(d) {
@@ -346,7 +353,7 @@ function renderPanel(d) {
 
   // 任务列表
   const ul = $('#tasks'); ul.innerHTML = '';
-  if (!d.rows.length) { ul.innerHTML = '<li class="empty">窗口内无活跃会话</li>'; }
+  if (!d.rows.length) { ul.innerHTML = `<li class="empty">${esc(T.empty)}</li>`; }
   for (const r of d.rows) {
     const li = document.createElement('li');
     li.className = 'task' + (r.attention ? ' attn' : '');
@@ -359,29 +366,29 @@ function renderPanel(d) {
     li.innerHTML =
       `<span class="sdot" style="background:${color}"></span>`
       + `<div class="t-main"><div class="t-title">${esc(r.title)}</div>`
-      + `<div class="t-meta">${r.state.label} · ${esc(r.src)} · ${esc(r.projectShort)} · ${fmtIdle(r.idleSec)}${r.live ? ' · 活动中' : ''}${r.stale ? ' · 久未处理' : ''}${toolTxt}</div>${todo}</div>`
+      + `<div class="t-meta">${esc(T.state[r.state.key] || r.state.label)} · ${esc(r.src)} · ${esc(r.projectShort)} · ${fmtIdle(r.idleSec)}${r.live ? ' · ' + esc(T.active) : ''}${r.stale ? ' · ' + esc(T.stale) : ''}${toolTxt}</div>${todo}</div>`
       + `<div class="t-right"><div class="t-usage">${fmtN(r.usage.out)} <span class="dim">${fmtCost(r.usage.cost, r.usage.costReal)}</span></div>`
-      + `${r.project ? `<button class="openbtn" title="打开项目目录">${ICONS.folder}</button>` : ''}</div>`;
+      + `${r.project ? `<button class="openbtn" title="${esc(T.openDir)}">${ICONS.folder}</button>` : ''}</div>`;
     if (r.project) li.querySelector('.openbtn').addEventListener('click', () => window.api.openPath(r.project));
     ul.appendChild(li);
   }
   // 聚合用量挪到底部、次要呈现（成本仅按单价估算，订阅不计费）；实时用量失败也只在此低调提示
   const liveFail = d.quota && !d.quota.ok;
-  $('#panel-foot').textContent = `${fmtN(d.agg.out)} 输出 · ≈${fmtCost(d.agg.cost, true)}（订阅不计费）`
-    + (liveFail ? ' · 实时用量未取到' : '') + ` · ${new Date(d.generatedAt).toLocaleTimeString()}`;
+  $('#panel-foot').textContent = `${fmtN(d.agg.out)} ${T.out} · ≈${fmtCost(d.agg.cost, true)} (${T.estimate})`
+    + (liveFail ? ' · ' + T.liveFail : '') + ` · ${new Date(d.generatedAt).toLocaleTimeString()}`;
 }
 
-const Q_BUCKETS = [['five_hour', '5 小时'], ['seven_day', '每周·所有模型'], ['seven_day_sonnet', '每周·Sonnet'], ['seven_day_opus', '每周·Opus'], ['seven_day_cowork', '每周·Cowork']];
+const Q_BUCKETS = ['five_hour', 'seven_day', 'seven_day_sonnet', 'seven_day_opus', 'seven_day_cowork'];   // 标签经 T.qb 本地化
 function qColor(u) { return u >= 90 ? '#fb6f86' : u >= 70 ? '#f5c451' : '#6aa1ff'; }   // 对齐 CSS --err/--warn/--accent
 function quotaAlert(d) {   // 返回最严重的 bucket（util≥90 才算告急），否则 null
   const q = d && d.quota; if (!q || !q.ok || !q.quota) return null;
   let worst = null;
-  for (const [k, label] of Q_BUCKETS) { const bk = q.quota[k]; if (bk && bk.util >= 90 && (!worst || bk.util > worst.util)) worst = { util: Math.round(bk.util), label, resetsAt: bk.resetsAt }; }
+  for (const k of Q_BUCKETS) { const bk = q.quota[k]; if (bk && bk.util >= 90 && (!worst || bk.util > worst.util)) worst = { util: Math.round(bk.util), label: T.qb[k], resetsAt: bk.resetsAt }; }
   return worst;
 }
 function quotaText(a) {
   const remain = a.resetsAt ? Date.parse(a.resetsAt) - Date.now() : 0;
-  return `${a.label}配额已用 ${a.util}%` + (remain > 0 ? ` · ${fmtIdle(remain / 1000)}后重置` : '');
+  return T.quotaUsed(a.label, a.util, remain > 0 ? fmtIdle(remain / 1000) : '');
 }
 function applyQuota(d) { app.dataset.quota = quotaAlert(d) ? 'critical' : ''; }   // 任一 bucket≥90% → 桌宠光晕转红
 function renderQuota(d) {
@@ -389,26 +396,26 @@ function renderQuota(d) {
   const q = d.quota;
   if (q && q.ok && q.quota) {                          // 实时配额条（最有用的视图）
     rl.style.display = 'none';
-    for (const [k, label] of Q_BUCKETS) {
+    for (const k of Q_BUCKETS) {
       const b = q.quota[k]; if (!b) continue;
       const u = Math.round(b.util);
       const remain = b.resetsAt ? Date.parse(b.resetsAt) - Date.now() : 0;
       box.insertAdjacentHTML('beforeend',
-        `<div class="q-row"><span class="qlbl">${label}</span>`
+        `<div class="q-row"><span class="qlbl">${esc(T.qb[k])}</span>`
         + `<div class="q-bar"><i style="width:${Math.min(100, u)}%;background:${qColor(u)}"></i></div>`
-        + `<span class="q-val">${u}%<span class="q-reset"> · ${remain > 0 ? fmtIdle(remain / 1000) : '重置'}</span></span></div>`);
+        + `<span class="q-val">${u}%<span class="q-reset"> · ${remain > 0 ? fmtIdle(remain / 1000) : T.reset}</span></span></div>`);
     }
     const ex = q.quota.extra_usage;
     if (ex && ex.is_enabled) box.insertAdjacentHTML('beforeend',
-      `<div class="q-row"><span class="qlbl">额外用量</span><span class="dim" style="grid-column:2/4">已用 $${(ex.used_credits || 0).toFixed(2)} / 上限 $${ex.monthly_limit}</span></div>`);
-    box.insertAdjacentHTML('beforeend', `<div class="q-reset" style="margin-top:3px">实时用量 · ${fmtIdle((Date.now() - q.fetchedAt) / 1000)}前</div>`);
-  } else if (d.rl) {                                   // 无实时配额条但有本地 5h 读数 → 只显这一行；不再有"未取到"长说明/"暂无读数"空行
+      `<div class="q-row"><span class="qlbl">${esc(T.extra)}</span><span class="dim" style="grid-column:2/4">${esc(T.used)} $${(ex.used_credits || 0).toFixed(2)} / ${esc(T.limit)} $${ex.monthly_limit}</span></div>`);
+    box.insertAdjacentHTML('beforeend', `<div class="q-reset" style="margin-top:3px">${esc(T.liveAge(fmtIdle((Date.now() - q.fetchedAt) / 1000)))}</div>`);
+  } else if (d.rl) {                                   // 无实时配额条但有本地 5h 读数 → 只显这一行
     rl.style.display = '';
     const ok = d.rl.status === 'allowed' && !d.rl.isUsingOverage;
     $('#rl-dot').className = 'dot ' + (ok ? 'ok' : 'warn');
     const remain = d.rl.resetsAt * 1000 - Date.now();
-    $('#rl-text').textContent = `${d.rl.status}${d.rl.isUsingOverage ? ' [超额]' : ''} · 重置 ${clock(d.rl.resetsAt)}`
-      + (remain > 0 ? ` (${fmtIdle(remain / 1000)})` : ' (已重置)');
+    $('#rl-text').textContent = `${d.rl.status}${d.rl.isUsingOverage ? ' [' + T.overage + ']' : ''} · ${T.reset} ${clock(d.rl.resetsAt)}`
+      + (remain > 0 ? ` (${fmtIdle(remain / 1000)})` : ` (${T.wasReset})`);
   } else {
     rl.style.display = 'none';
   }
@@ -435,7 +442,7 @@ if (window.api && window.api.onUpdate) {
     } },
     rows: [
       { key: '1', src: 'Cowork-VM', title: 'Math modeling progress', projectShort: 'Mathmodel', project: '/x', state: { key: 'AWAITING', label: '等输入' }, tool: null, idleSec: 42, live: false, attention: true, usage: { out: 34260, cost: 0.31, costReal: true }, todos: { total: 7, done: 5, current: 'Writing the report section' }, model: 'opus-4-8' },
-      { key: '2', src: 'Code', title: 'clawd-pets', projectShort: 'clawd-pets', project: '/y', state: { key: 'RUNNING', label: '运行中' }, tool: 'Bash', activity: 'Restart Electron and verify clean boot', think: '现在重构 renderer：单气泡 → 实时行栈，每任务一行显示其思考与活动', idleSec: 3, live: true, attention: false, usage: { out: 6170, cost: 0.42, costReal: false }, todos: null, model: 'opus-4-8' },
+      { key: '2', src: 'Code', title: 'clawd-pets', projectShort: 'clawd-pets', project: '/y', state: { key: 'RUNNING', label: '运行中' }, tool: 'Bash', activity: 'Restart Electron and verify clean boot', think: 'Refactoring renderer: single bubble → live status stack, one row per task', idleSec: 3, live: true, attention: false, usage: { out: 6170, cost: 0.42, costReal: false }, todos: null, model: 'opus-4-8' },
       { key: '3', src: 'Cowork-VM', title: 'English writing help', projectShort: 'English-learning', project: '/z', state: { key: 'ERROR', label: '出错' }, tool: null, idleSec: 300, live: false, attention: true, usage: { out: 28400, cost: 4.2, costReal: true }, todos: null, model: 'sonnet-4-6' },
       { key: '4', src: 'Cowork', title: 'Project review', projectShort: 'A new project', project: '/w', state: { key: 'IDLE', label: '空闲' }, tool: null, idleSec: 5400, live: false, attention: false, usage: { out: 90600, cost: 7.2, costReal: false }, todos: null, model: 'opus-4-8' },
     ],
