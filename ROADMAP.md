@@ -67,7 +67,7 @@
 - **T2.3 用量端点退避/超时/陈旧标记**（S–M）：`startUsage` 固定 60s 死轮询，`fetchUsage` 无显式 timeout，端点限流仍硬打。加 `AbortController`(8s) + 连续失败指数退避(60→120→300s) + 保留上次成功值显示"实时(陈旧 Nm 前)" + unauthorized 停轮询。**注意：token 刷新（refresh）单独评估、不与本条捆绑**（端点是未公开接口，主动 refresh 风险高一档且可能需回写凭据=违背只读）。
 - **T2.4 消除 phase0/monitor.js 的 collector 逻辑复制**（S）：README/PLAN 称 collector "被 CLI 和 GUI 复用"，实测 `phase0/monitor.js` 自带一份 `walk/jsonlState/auditState/collect` 拷贝、未 require。改 `require('../src/collector')`，删重复推导，避免两边阈值漂移。
 - **T2.5 ③ 进行中会话用量小修**（S）：唯一无 result 行的进行中 ③ 会话暂显 $0.00。可选累加 `assistant.message.usage`（21/21 文件都有）用 `pricing.js` 估算并标 `~`，不再 `costReal=true` 谎称真值。
-- **T2.6 collect 增量解析 / 移出主进程**（M，发布审计提出）：`collect()` 全同步——walk 全树 statSync + 对窗口内文件读尾部≤6MB + JSON.parse 逐行（实测 windowMin=1440 单次 ≈132ms、最大单文件 47MB）。跑在主进程且被心跳(默认 3s)+fs.watch(250ms 防抖)高频触发，多个活跃大会话时桌宠呼吸/眨眼/拖拽会卡。三选一：① 移 worker_threads/utilityProcess；② fs.watch 仅当变更命中窗口内会话再 collect + 最短重算间隔(≥800ms)合并；③ 缓存每文件 (mtimeMs,size,解析结果)，mtime 未变跳过重读重解析(增量)。
+- **T2.6 collect 增量解析 / 移出主进程**（部分完成 2026-06-17 发布审计）：✅ **方案③增量缓存已做**——`_parseCache` 按 `(mtimeMs,size)` 命中跳过重读+重解析，末尾按 `seen` 剪枝；同进程 collect ×2 实测 61ms→**12ms**，稳态心跳/fs.watch tick 基本零成本。**剩余可选**：① 移 worker_threads/utilityProcess（首次冷算 ~60ms 仍在主进程，极端大会话可进一步移走）；② fs.watch 仅当变更命中窗口内会话再 collect + 最短重算间隔合并。当前缓存已基本消除卡顿主因，①② 优先级降为低。
 - **T2.7 live 判定防 PID 复用误判**（L，精度边界）：`alive(pid)=process.kill(pid,0)` 无法区分"同 PID 不同进程"——旧会话进程退出后 PID 被 OS 复用给无关进程会被误标 live→可能误显运行中。macOS 短期复用概率低、EPERM 已当不活处理。可选增强：session json 若有进程启动时间则 `ps -o lstart=` 交叉校验，或对 live 加"文件 idleSec 也较新"双门槛。
 
 ---
